@@ -35,10 +35,9 @@
           }, 1000);
         } else if (minutes === 0 && seconds === 0 && isActive) {
           setIsActive(false);
-          alert(mode === 'Work' ? "Focus session complete!" : "Break is over!");
         }
         return () => clearInterval(interval);
-      }, [isActive, minutes, seconds, mode]);
+      }, [isActive, minutes, seconds]);
 
       const toggle = () => setIsActive(!isActive);
       
@@ -49,7 +48,7 @@
       };
 
       const handleTimeChange = () => {
-        const newTime = prompt(`Change ${mode} minutes:`, mode === 'Work' ? workTime : breakTime);
+        const newTime = prompt(`Minutes for ${mode}:`, mode === 'Work' ? workTime : breakTime);
         if (newTime && !isNaN(newTime)) {
           const num = parseInt(newTime);
           if (mode === 'Work') setWorkTime(num); else setBreakTime(num);
@@ -65,31 +64,31 @@
         <div className="flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none px-4">
           <div className="flex gap-4 mb-4">
             <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} 
-              className={`text-[10px] uppercase tracking-[0.2em] ${mode === 'Work' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-50'}`}>
+              className={`text-[10px] uppercase tracking-[0.2em] transition-opacity ${mode === 'Work' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-40'}`}>
               Focus
             </button>
             <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} 
-              className={`text-[10px] uppercase tracking-[0.2em] ${mode === 'Break' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-50'}`}>
+              className={`text-[10px] uppercase tracking-[0.2em] transition-opacity ${mode === 'Break' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-40'}`}>
               Break
             </button>
           </div>
 
           <div className="cursor-pointer text-center group" onClick={handleTimeChange}>
-            <h1 className="text-6xl font-light tracking-tighter transition-all group-hover:opacity-70">
+            <h1 className="text-6xl font-light tracking-tighter transition-all">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </h1>
-            <p className="text-[7px] opacity-0 group-hover:opacity-40 uppercase tracking-widest mt-[-2px]">Click to Edit</p>
+            <p className="text-[7px] opacity-40 uppercase tracking-widest mt-1">Click to Edit</p>
           </div>
 
-          <div className="w-20 h-[2px] bg-[#a8baab] rounded-full my-6 overflow-hidden">
+          <div className="w-24 h-[1.5px] bg-[#a8baab] rounded-full my-6 overflow-hidden">
             <div className="h-full bg-[#4a5d4c] transition-all duration-1000" style={{ width: `${100 - progress}%` }}></div>
           </div>
 
           <div className="flex gap-6 items-center">
-            <button onClick={toggle} className="text-[10px] font-bold bg-[#4a5d4c] text-[#BECFBB] px-8 py-2.5 rounded-full hover:shadow-md active:scale-95 transition-all tracking-[0.1em]">
+            <button onClick={toggle} className="text-[10px] font-bold bg-[#4a5d4c] text-[#BECFBB] px-8 py-2.5 rounded-full active:scale-95 transition-all tracking-[0.1em]">
               {isActive ? 'PAUSE' : 'START'}
             </button>
-            <button onClick={reset} className="text-[9px] opacity-50 hover:opacity-100 uppercase tracking-widest transition-opacity">Reset</button>
+            <button onClick={reset} className="text-[9px] opacity-40 hover:opacity-100 uppercase tracking-widest transition-opacity">Reset</button>
           </div>
         </div>
       );
