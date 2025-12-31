@@ -3,43 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sage Pomodoro</title>
+  <title>Evergreen Pomodoro</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body style="background: #9db5a2; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif;">
+<body style="background: #BECFBB; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif;">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
 
     function Pomodoro() {
+      const [workTime, setWorkTime] = useState(25);
+      const [breakTime, setBreakTime] = useState(5);
       const [minutes, setMinutes] = useState(25);
       const [seconds, setSeconds] = useState(0);
       const [isActive, setIsActive] = useState(false);
-      const [mode, setMode] = useState('Work'); // Work or Break
-      const [workTime, setWorkTime] = useState(25);
-      const [breakTime, setBreakTime] = useState(5);
+      const [mode, setMode] = useState('Work');
 
       useEffect(() => {
         let interval = null;
         if (isActive && (minutes > 0 || seconds > 0)) {
           interval = setInterval(() => {
             if (seconds === 0) {
-              setMinutes(minutes - 1);
+              setMinutes(m => m - 1);
               setSeconds(59);
             } else {
-              setSeconds(seconds - 1);
+              setSeconds(s => s - 1);
             }
           }, 1000);
-        } else if (minutes === 0 && seconds === 0) {
+        } else if (minutes === 0 && seconds === 0 && isActive) {
           setIsActive(false);
-          const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-          audio.play();
+          alert(mode === 'Work' ? "Focus session complete!" : "Break is over!");
         }
         return () => clearInterval(interval);
-      }, [isActive, minutes, seconds]);
+      }, [isActive, minutes, seconds, mode]);
 
       const toggle = () => setIsActive(!isActive);
       
@@ -49,57 +48,48 @@
         setSeconds(0);
       };
 
-      const switchMode = (newMode) => {
-        setMode(newMode);
-        setIsActive(false);
-        setMinutes(newMode === 'Work' ? workTime : breakTime);
-        setSeconds(0);
-      };
-
-      const handleEdit = (type) => {
-        const val = prompt(`Set ${type} minutes:`, type === 'Work' ? workTime : breakTime);
-        if (val && !isNaN(val)) {
-          const num = parseInt(val);
-          if (type === 'Work') {
-            setWorkTime(num);
-            if (mode === 'Work') setMinutes(num);
-          } else {
-            setBreakTime(num);
-            if (mode === 'Break') setMinutes(num);
-          }
+      const handleTimeChange = () => {
+        const newTime = prompt(`Change ${mode} minutes:`, mode === 'Work' ? workTime : breakTime);
+        if (newTime && !isNaN(newTime)) {
+          const num = parseInt(newTime);
+          if (mode === 'Work') setWorkTime(num); else setBreakTime(num);
+          setMinutes(num);
           setSeconds(0);
+          setIsActive(false);
         }
       };
 
-      const progress = mode === 'Work' 
-        ? ((minutes * 60 + seconds) / (workTime * 60)) * 100 
-        : ((minutes * 60 + seconds) / (breakTime * 60)) * 100;
+      const progress = ((minutes * 60 + seconds) / ((mode === 'Work' ? workTime : breakTime) * 60)) * 100;
 
       return (
-        <div className="p-4 flex flex-col items-center justify-center h-screen text-white select-none">
-          <div className="flex gap-4 mb-2">
-            <button onClick={() => switchMode('Work')} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
-            <button onClick={() => switchMode('Break')} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
+        <div className="flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none px-4">
+          <div className="flex gap-4 mb-4">
+            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} 
+              className={`text-[10px] uppercase tracking-[0.2em] ${mode === 'Work' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-50'}`}>
+              Focus
+            </button>
+            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} 
+              className={`text-[10px] uppercase tracking-[0.2em] ${mode === 'Break' ? 'font-bold border-b border-[#4a5d4c]' : 'opacity-50'}`}>
+              Break
+            </button>
           </div>
 
-          <h1 className="text-5xl font-light mb-1 tracking-tighter cursor-pointer" onClick={() => handleEdit(mode)}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-          </h1>
-
-          <div className="w-full max-w-[120px] h-1 bg-[#869a8a] rounded-full mb-6 overflow-hidden">
-            <div className="h-full bg-white transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+          <div className="cursor-pointer text-center group" onClick={handleTimeChange}>
+            <h1 className="text-6xl font-light tracking-tighter transition-all group-hover:opacity-70">
+              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </h1>
+            <p className="text-[7px] opacity-0 group-hover:opacity-40 uppercase tracking-widest mt-[-2px]">Click to Edit</p>
           </div>
 
-          <div className="flex gap-6">
-            <button onClick={toggle} className="text-xs font-bold bg-white text-[#9db5a2] px-4 py-1.5 rounded-full hover:bg-opacity-90">
+          <div className="w-20 h-[2px] bg-[#a8baab] rounded-full my-6 overflow-hidden">
+            <div className="h-full bg-[#4a5d4c] transition-all duration-1000" style={{ width: `${100 - progress}%` }}></div>
+          </div>
+
+          <div className="flex gap-6 items-center">
+            <button onClick={toggle} className="text-[10px] font-bold bg-[#4a5d4c] text-[#BECFBB] px-8 py-2.5 rounded-full hover:shadow-md active:scale-95 transition-all tracking-[0.1em]">
               {isActive ? 'PAUSE' : 'START'}
             </button>
-            <button onClick={reset} className="text-xs opacity-80 hover:opacity-100">RESET</button>
-          </div>
-
-          <div className="mt-4 flex gap-4 opacity-40 text-[9px]">
-            <span className="cursor-pointer" onClick={() => handleEdit('Work')}>Set Work: {workTime}m</span>
-            <span className="cursor-pointer" onClick={() => handleEdit('Break')}>Set Break: {breakTime}m</span>
+            <button onClick={reset} className="text-[9px] opacity-50 hover:opacity-100 uppercase tracking-widest transition-opacity">Reset</button>
           </div>
         </div>
       );
