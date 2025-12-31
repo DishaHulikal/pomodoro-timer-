@@ -12,7 +12,7 @@
 <body style="background: #BECFBB; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif;">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     function Pomodoro() {
       const [workTime, setWorkTime] = useState(25);
@@ -22,6 +22,7 @@
       const [isActive, setIsActive] = useState(false);
       const [mode, setMode] = useState('Work');
       const [isEditing, setIsEditing] = useState(false);
+      const inputRef = useRef(null);
 
       useEffect(() => {
         let interval = null;
@@ -48,8 +49,8 @@
         setSeconds(0);
       };
 
-      const handleBlur = (e) => {
-        const num = parseInt(e.target.value);
+      const finishEditing = (val) => {
+        const num = parseInt(val);
         if (!isNaN(num) && num > 0) {
           if (mode === 'Work') { setWorkTime(num); setMinutes(num); }
           else { setBreakTime(num); setMinutes(num); }
@@ -64,25 +65,29 @@
       return (
         <div className="p-4 flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none">
           <div className="flex gap-4 mb-2">
-            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
-            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
+            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false); setIsEditing(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
+            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false); setIsEditing(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
           </div>
 
-          {isEditing ? (
-            <input 
-              autoFocus 
-              className="text-5xl font-light mb-1 bg-transparent border-b border-[#4a5d4c] w-20 text-center outline-none"
-              defaultValue={mode === 'Work' ? workTime : breakTime}
-              onBlur={handleBlur}
-              onKeyDown={(e) => e.key === 'Enter' && handleBlur(e)}
-            />
-          ) : (
-            <h1 className="text-5xl font-light mb-1 tracking-tighter cursor-pointer" onClick={() => setIsEditing(true)}>
-              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-            </h1>
-          )}
+          <div className="h-16 flex items-center justify-center">
+            {isEditing ? (
+              <input 
+                ref={inputRef}
+                autoFocus 
+                type="number"
+                className="text-5xl font-light bg-[#BECFBB] border-b-2 border-[#4a5d4c] w-24 text-center outline-none text-[#4a5d4c]"
+                defaultValue={mode === 'Work' ? workTime : breakTime}
+                onBlur={(e) => finishEditing(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && finishEditing(e.target.value)}
+              />
+            ) : (
+              <h1 className="text-5xl font-light tracking-tighter cursor-text hover:opacity-80 transition-opacity" onClick={() => setIsEditing(true)}>
+                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+              </h1>
+            )}
+          </div>
 
-          <div className="w-full max-w-[120px] h-1 bg-[#a8baab] rounded-full mb-6 overflow-hidden">
+          <div className="w-full max-w-[120px] h-1 bg-[#a8baab] rounded-full mb-6 mt-2 overflow-hidden">
             <div className="h-full bg-[#4a5d4c] transition-all duration-1000" style={{ width: `${progress}%` }}></div>
           </div>
 
@@ -90,7 +95,7 @@
             <button onClick={toggle} className="text-xs font-bold bg-[#4a5d4c] text-[#BECFBB] px-4 py-1.5 rounded-full hover:opacity-90">
               {isActive ? 'PAUSE' : 'START'}
             </button>
-            <button onClick={reset} className="text-xs opacity-60 hover:opacity-100">RESET</button>
+            <button onClick={reset} className="text-xs opacity-60 hover:opacity-100 uppercase tracking-widest">Reset</button>
           </div>
         </div>
       );
