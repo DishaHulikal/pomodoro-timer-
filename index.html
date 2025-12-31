@@ -21,6 +21,7 @@
       const [seconds, setSeconds] = useState(0);
       const [isActive, setIsActive] = useState(false);
       const [mode, setMode] = useState('Work');
+      const [isEditing, setIsEditing] = useState(false);
 
       useEffect(() => {
         let interval = null;
@@ -47,25 +48,18 @@
         setSeconds(0);
       };
 
-      const handleTimeChange = () => {
-        const newTime = prompt(`Set ${mode} minutes:`, mode === 'Work' ? workTime : breakTime);
-        if (newTime && !isNaN(newTime)) {
-          const num = parseInt(newTime);
-          if (mode === 'Work') {
-            setWorkTime(num);
-            if (mode === 'Work') setMinutes(num);
-          } else {
-            setBreakTime(num);
-            if (mode === 'Break') setMinutes(num);
-          }
+      const handleBlur = (e) => {
+        const num = parseInt(e.target.value);
+        if (!isNaN(num) && num > 0) {
+          if (mode === 'Work') { setWorkTime(num); setMinutes(num); }
+          else { setBreakTime(num); setMinutes(num); }
           setSeconds(0);
-          setIsActive(false);
         }
+        setIsEditing(false);
+        setIsActive(false);
       };
 
-      const progress = mode === 'Work' 
-        ? ((minutes * 60 + seconds) / (workTime * 60)) * 100 
-        : ((minutes * 60 + seconds) / (breakTime * 60)) * 100;
+      const progress = ((minutes * 60 + seconds) / ((mode === 'Work' ? workTime : breakTime) * 60)) * 100;
 
       return (
         <div className="p-4 flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none">
@@ -74,9 +68,19 @@
             <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
           </div>
 
-          <h1 className="text-5xl font-light mb-1 tracking-tighter cursor-pointer" onClick={handleTimeChange}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-          </h1>
+          {isEditing ? (
+            <input 
+              autoFocus 
+              className="text-5xl font-light mb-1 bg-transparent border-b border-[#4a5d4c] w-20 text-center outline-none"
+              defaultValue={mode === 'Work' ? workTime : breakTime}
+              onBlur={handleBlur}
+              onKeyDown={(e) => e.key === 'Enter' && handleBlur(e)}
+            />
+          ) : (
+            <h1 className="text-5xl font-light mb-1 tracking-tighter cursor-pointer" onClick={() => setIsEditing(true)}>
+              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </h1>
+          )}
 
           <div className="w-full max-w-[120px] h-1 bg-[#a8baab] rounded-full mb-6 overflow-hidden">
             <div className="h-full bg-[#4a5d4c] transition-all duration-1000" style={{ width: `${progress}%` }}></div>
