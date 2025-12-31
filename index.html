@@ -51,26 +51,27 @@
         const newTime = prompt(`Set ${mode} minutes:`, mode === 'Work' ? workTime : breakTime);
         if (newTime && !isNaN(newTime)) {
           const num = parseInt(newTime);
-          if (mode === 'Work') setWorkTime(num); else setBreakTime(num);
-          setMinutes(num);
+          if (mode === 'Work') {
+            setWorkTime(num);
+            if (mode === 'Work') setMinutes(num);
+          } else {
+            setBreakTime(num);
+            if (mode === 'Break') setMinutes(num);
+          }
           setSeconds(0);
           setIsActive(false);
         }
       };
 
-      const progress = ((minutes * 60 + seconds) / ((mode === 'Work' ? workTime : breakTime) * 60)) * 100;
+      const progress = mode === 'Work' 
+        ? ((minutes * 60 + seconds) / (workTime * 60)) * 100 
+        : ((minutes * 60 + seconds) / (breakTime * 60)) * 100;
 
       return (
         <div className="p-4 flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none">
           <div className="flex gap-4 mb-2">
-            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} 
-              className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>
-              Focus
-            </button>
-            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} 
-              className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>
-              Break
-            </button>
+            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
+            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
           </div>
 
           <h1 className="text-5xl font-light mb-1 tracking-tighter cursor-pointer" onClick={handleTimeChange}>
@@ -82,7 +83,7 @@
           </div>
 
           <div className="flex gap-6">
-            <button onClick={toggle} className="text-xs font-bold bg-[#4a5d4c] text-[#BECFBB] px-4 py-1.5 rounded-full hover:opacity-90">
+            <button onClick={toggle} className="text-xs font-bold bg-[#4a5d4c] text-[#BECFBB] px-4 py-1.5 rounded-full hover:bg-opacity-90">
               {isActive ? 'PAUSE' : 'START'}
             </button>
             <button onClick={reset} className="text-xs opacity-60 hover:opacity-100">RESET</button>
