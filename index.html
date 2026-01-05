@@ -12,7 +12,7 @@
 <body style="background: #BECFBB; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif;">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     function Pomodoro() {
       const [workTime, setWorkTime] = useState(25);
@@ -28,14 +28,11 @@
           const context = new (window.AudioContext || window.webkitAudioContext)();
           const oscillator = context.createOscillator();
           const gain = context.createGain();
-          oscillator.connect(gain);
-          gain.connect(context.destination);
-          oscillator.type = 'sine';
-          oscillator.frequency.setValueAtTime(880, context.currentTime);
+          oscillator.connect(gain); gain.connect(context.destination);
+          oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, context.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1);
-          oscillator.start();
-          oscillator.stop(context.currentTime + 1);
-        } catch (e) { console.log("Audio play failed", e); }
+          oscillator.start(); oscillator.stop(context.currentTime + 1);
+        } catch (e) { console.error(e); }
       };
 
       useEffect(() => {
@@ -55,21 +52,25 @@
         } else if (minutes === 0 && seconds === 0 && isActive) {
           setIsActive(false);
           playSound();
-          document.title = "TIME'S UP! 🔔";
         }
         return () => clearInterval(interval);
       }, [isActive, minutes, seconds, mode]);
 
-      const handleBlur = (val) => {
+      // --- IMPROVED SAVE LOGIC ---
+      const saveNewTime = (val) => {
         const num = parseInt(val);
-        // Changed: now allows 0 for testing purposes
         if (!isNaN(num) && num >= 0) {
-          if (mode === 'Work') { setWorkTime(num); setMinutes(num); }
-          else { setBreakTime(num); setMinutes(num); }
+          if (mode === 'Work') {
+            setWorkTime(num);
+            setMinutes(num);
+          } else {
+            setBreakTime(num);
+            setMinutes(num);
+          }
           setSeconds(0);
         }
-        setIsEditing(false);
         setIsActive(false);
+        setIsEditing(false); // This closes the box and forces the UI to refresh
       };
 
       const progress = ((minutes * 60 + seconds) / (Math.max(1, (mode === 'Work' ? workTime : breakTime)) * 60)) * 100;
@@ -88,8 +89,8 @@
                 type="number"
                 className="text-5xl font-light bg-transparent border-b-2 border-[#4a5d4c] w-24 text-center outline-none text-[#4a5d4c]"
                 defaultValue={mode === 'Work' ? workTime : breakTime}
-                onBlur={(e) => handleBlur(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleBlur(e.target.value)}
+                onBlur={(e) => saveNewTime(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveNewTime(e.target.value)}
               />
             ) : (
               <h1 className="text-5xl font-light tracking-tighter cursor-text" onClick={() => setIsEditing(true)}>
