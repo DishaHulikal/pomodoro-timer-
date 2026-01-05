@@ -12,7 +12,7 @@
 <body style="background: #BECFBB; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif;">
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
 
     function Pomodoro() {
       const [workTime, setWorkTime] = useState(25);
@@ -22,9 +22,26 @@
       const [isActive, setIsActive] = useState(false);
       const [mode, setMode] = useState('Work');
       const [isEditing, setIsEditing] = useState(false);
-      const inputRef = useRef(null);
+
+      const playSound = () => {
+        try {
+          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(880, context.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1);
+          oscillator.start();
+          oscillator.stop(context.currentTime + 1);
+        } catch (e) { console.log("Audio play failed", e); }
+      };
 
       useEffect(() => {
+        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        document.title = isActive ? `${timeStr} - ${mode}` : "Evergreen Pomodoro";
+
         let interval = null;
         if (isActive && (minutes > 0 || seconds > 0)) {
           interval = setInterval(() => {
@@ -37,21 +54,16 @@
           }, 1000);
         } else if (minutes === 0 && seconds === 0 && isActive) {
           setIsActive(false);
+          playSound();
+          document.title = "TIME'S UP! 🔔";
         }
         return () => clearInterval(interval);
-      }, [isActive, minutes, seconds]);
+      }, [isActive, minutes, seconds, mode]);
 
-      const toggle = () => setIsActive(!isActive);
-      
-      const reset = () => {
-        setIsActive(false);
-        setMinutes(mode === 'Work' ? workTime : breakTime);
-        setSeconds(0);
-      };
-
-      const finishEditing = (val) => {
+      const handleBlur = (val) => {
         const num = parseInt(val);
-        if (!isNaN(num) && num > 0) {
+        // Changed: now allows 0 for testing purposes
+        if (!isNaN(num) && num >= 0) {
           if (mode === 'Work') { setWorkTime(num); setMinutes(num); }
           else { setBreakTime(num); setMinutes(num); }
           setSeconds(0);
@@ -60,28 +72,27 @@
         setIsActive(false);
       };
 
-      const progress = ((minutes * 60 + seconds) / ((mode === 'Work' ? workTime : breakTime) * 60)) * 100;
+      const progress = ((minutes * 60 + seconds) / (Math.max(1, (mode === 'Work' ? workTime : breakTime)) * 60)) * 100;
 
       return (
         <div className="p-4 flex flex-col items-center justify-center h-screen text-[#4a5d4c] select-none">
           <div className="flex gap-4 mb-2">
-            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false); setIsEditing(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
-            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false); setIsEditing(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
+            <button onClick={() => {setMode('Work'); setMinutes(workTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Work' ? 'font-bold underline' : 'opacity-60'}`}>Focus</button>
+            <button onClick={() => {setMode('Break'); setMinutes(breakTime); setSeconds(0); setIsActive(false);}} className={`text-[10px] uppercase tracking-widest ${mode === 'Break' ? 'font-bold underline' : 'opacity-60'}`}>Break</button>
           </div>
 
           <div className="h-16 flex items-center justify-center">
             {isEditing ? (
               <input 
-                ref={inputRef}
                 autoFocus 
                 type="number"
-                className="text-5xl font-light bg-[#BECFBB] border-b-2 border-[#4a5d4c] w-24 text-center outline-none text-[#4a5d4c]"
+                className="text-5xl font-light bg-transparent border-b-2 border-[#4a5d4c] w-24 text-center outline-none text-[#4a5d4c]"
                 defaultValue={mode === 'Work' ? workTime : breakTime}
-                onBlur={(e) => finishEditing(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && finishEditing(e.target.value)}
+                onBlur={(e) => handleBlur(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleBlur(e.target.value)}
               />
             ) : (
-              <h1 className="text-5xl font-light tracking-tighter cursor-text hover:opacity-80 transition-opacity" onClick={() => setIsEditing(true)}>
+              <h1 className="text-5xl font-light tracking-tighter cursor-text" onClick={() => setIsEditing(true)}>
                 {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
               </h1>
             )}
@@ -92,10 +103,10 @@
           </div>
 
           <div className="flex gap-6">
-            <button onClick={toggle} className="text-xs font-bold bg-[#4a5d4c] text-[#BECFBB] px-4 py-1.5 rounded-full hover:opacity-90">
+            <button onClick={() => setIsActive(!isActive)} className="text-xs font-bold bg-[#4a5d4c] text-[#BECFBB] px-4 py-1.5 rounded-full">
               {isActive ? 'PAUSE' : 'START'}
             </button>
-            <button onClick={reset} className="text-xs opacity-60 hover:opacity-100 uppercase tracking-widest">Reset</button>
+            <button onClick={() => {setMinutes(mode === 'Work' ? workTime : breakTime); setSeconds(0); setIsActive(false);}} className="text-xs opacity-60 hover:opacity-100 uppercase tracking-widest">Reset</button>
           </div>
         </div>
       );
